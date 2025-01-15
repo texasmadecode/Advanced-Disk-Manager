@@ -9,7 +9,7 @@ A standalone tool for managing disk operations, including partitioning, formatti
 - Performs disk health checks to detect bad sectors.
 
 ## Download
-[![Download EXE](https://img.shields.io/badge/Download-EXE-blue?style=for-the-badge)](https://github.com/username/Advanced-Disk-Manager/raw/main/advanced_disk_manager.exe)
+[![Download py](https://img.shields.io/badge/Download-EXE-blue?style=for-the-badge)](https://github.com/texasmadecode/Advanced-Disk-Manager/raw/main/advanced_disk_manager.py)
 
 ## How to Use
 1. **Download the EXE**:
@@ -26,6 +26,8 @@ A standalone tool for managing disk operations, including partitioning, formatti
 - The script uses `psutil` to detect unpartitioned disks.
 - `diskpart` commands are issued for disk operations.
 - A Tkinter-based UI handles user prompts and input.
+
+![Alt](https://repobeats.axiom.co/api/embed/b5c175ddce1a9599a0417e555290ea7221fac1f8.svg "Repobeats analytics image")
 
 ## Contributing
 Feel free to fork this repository and submit pull requests with improvements!
