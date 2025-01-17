@@ -1,9 +1,10 @@
-# This workflow will install Python dependencies, run tests and lint with a variety of Python versions
+# This workflow will install Python dependencies, run tests, and lint with a variety of Python versions
 # For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-python
 
 name: Python package
 
 on:
+  # Trigger the workflow on push or pull request events to the main branch
   push:
     branches: [ "main" ]
   pull_request:
@@ -11,30 +12,65 @@ on:
 
 jobs:
   build:
-
+    # Run the job on the latest version of Ubuntu
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
+        # Define the Python versions to test against
         python-version: ["3.9", "3.10", "3.11"]
 
     steps:
+    # Step to check out the repository
     - uses: actions/checkout@v4
+
+    # Step to set up the specified Python version
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v3
       with:
         python-version: ${{ matrix.python-version }}
+
+    # Step to cache dependencies to speed up subsequent builds
+    - name: Cache dependencies
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+
+    # Step to install dependencies
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
         python -m pip install flake8 pytest
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+
+    # Step to lint the code with flake8
     - name: Lint with flake8
       run: |
-        # stop the build if there are Python syntax errors or undefined names
+        # Stop the build if there are Python syntax errors or undefined names
         flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-        # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
+        # Exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
         flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+
+    # Step to run tests with pytest
     - name: Test with pytest
       run: |
         pytest
+
+    # Step to notify on build failure
+    - name: Notify on failure
+      if: failure()
+      uses: dawidd6/action-send-mail@v3
+      with:
+        server_address: smtp.example.com
+        server_port: 587
+        username: ${{ secrets.SMTP_USERNAME }}
+        password: ${{ secrets.SMTP_PASSWORD }}
+        subject: GitHub Actions build failed!
+        to: user@example.com
+        from: github-actions@example.com
+        body: |
+          The GitHub Actions build for the Python package has failed.
+          Please check the workflow logs for more details.
