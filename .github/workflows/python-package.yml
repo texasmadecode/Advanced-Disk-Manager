@@ -38,3 +38,14 @@ jobs:
     - name: Test with pytest
       run: |
         pytest
+
+    # Delete or comment the next step if not is needed
+    # - name: Send email notification
+    #   uses: dawidd6/action-send-mail@v3
+    #   with:
+    #     server_address: smtp.example.com
+    #     server_port: 587
+    #     to: user@example.com
+    #     from: github-actions@example.com
+    #     subject: GitHub Actions build failed!
+    #     body: The GitHub Actions build for the Python package has failed. Please check the workflow logs for more details.
