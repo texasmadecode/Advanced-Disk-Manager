@@ -30,4 +30,3 @@ jobs:
       # Example of formatting a disk (E:) with NTFS and label 'MyDrive'
       - name: Run Python script (format disk E)
         run: python advanced_disk_manager.py --action format --disk E: --fs NTFS --label MyDrive
-
