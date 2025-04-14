@@ -1,15 +1,13 @@
-import os
 import subprocess
-import tkinter as tk
-from tkinter import messagebox, simpledialog
-import psutil
+import argparse
 
 def list_unpartitioned_disks():
     """Lists unpartitioned disks."""
     disks = []
-    for part in psutil.disk_partitions(all=True):
-        if part.fstype == "":
-            disks.append(part.device)
+    # Checking the partitions and if the file system is empty (unpartitioned)
+    for part in subprocess.check_output("wmic logicaldisk get caption, description", shell=True).decode().splitlines():
+        if part.strip().startswith('Disk'):
+            disks.append(part.split()[0])  # Extract disk names
     return disks
 
 def disk_health_check(disk):
@@ -22,9 +20,9 @@ def disk_health_check(disk):
             check=True,
             shell=True
         )
-        messagebox.showinfo("Health Check", f"Health check for {disk}:\n\n{result.stdout}")
+        print(f"Health check for {disk}:\n\n{result.stdout}")
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to perform health check on {disk}: {str(e)}")
+        print(f"Failed to perform health check on {disk}: {str(e)}")
 
 def format_disk(disk, file_system="NTFS", label="NewVolume"):
     """Formats the specified disk with user-selected options."""
@@ -37,57 +35,41 @@ def format_disk(disk, file_system="NTFS", label="NewVolume"):
         assign
         """
         subprocess.run(["diskpart"], input=disk_commands, text=True, check=True, shell=True)
-        messagebox.showinfo("Success", f"Disk {disk} has been formatted with {file_system} and label '{label}'.")
+        print(f"Disk {disk} has been formatted with {file_system} and label '{label}'.")
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to format disk {disk}: {str(e)}")
+        print(f"Failed to format disk {disk}: {str(e)}")
 
-def handle_disk_operations():
-    """Handles user prompts and disk operations."""
+def handle_disk_operations(action, disk, file_system="NTFS", label="NewVolume"):
+    """Handles disk operations based on user action."""
     unpartitioned_disks = list_unpartitioned_disks()
     if not unpartitioned_disks:
-        messagebox.showinfo("Info", "No unpartitioned disks found.")
+        print("No unpartitioned disks found.")
         return
 
-    for disk in unpartitioned_disks:
-        # Prompt for health check
-        health_check = messagebox.askyesno(
-            "Disk Health Check",
-            f"Do you want to perform a health check on disk {disk}?"
-        )
-        if health_check:
-            disk_health_check(disk)
+    if disk not in unpartitioned_disks:
+        print(f"Disk {disk} is not unpartitioned.")
+        return
 
-        # Ask user if they want to format the disk
-        response = messagebox.askyesno(
-            "Disk Found",
-            f"Unpartitioned disk detected: {disk}. Do you want to partition and format it?"
-        )
-        if response:
-            # Get file system choice
-            file_system = simpledialog.askstring(
-                "File System", 
-                "Enter the file system (NTFS, FAT32, exFAT):", 
-                initialvalue="NTFS"
-            )
-            if file_system is None:
-                file_system = "NTFS"
+    if action == "healthcheck":
+        disk_health_check(disk)
 
-            # Get volume label
-            label = simpledialog.askstring(
-                "Volume Label",
-                "Enter a label for the disk:",
-                initialvalue="NewVolume"
-            )
-            if label is None:
-                label = "NewVolume"
+    elif action == "format":
+        format_disk(disk, file_system, label)
+    else:
+        print("Invalid action specified.")
 
-            # Format the disk
-            format_disk(disk, file_system, label)
-
-# Main UI
+# Main CLI logic
 if __name__ == "__main__":
-    root = tk.Tk()
-    root.withdraw()  # Hide the main tkinter window
+    parser = argparse.ArgumentParser(description="Disk Management Tool")
+    parser.add_argument("--action", choices=["format", "healthcheck"], required=True, help="Action to perform on the disk")
+    parser.add_argument("--disk", required=True, help="Disk to operate on (e.g., 'C:', 'D:')")
+    parser.add_argument("--fs", default="NTFS", help="File system to format with (e.g., 'NTFS', 'FAT32')")
+    parser.add_argument("--label", default="NewVolume", help="Volume label for the formatted disk")
+
+    args = parser.parse_args()
+
+    handle_disk_operations(args.action, args.disk, args.fs, args.label)
+
     if messagebox.askyesno("Disk Manager", "Scan for unpartitioned disks?"):
         handle_disk_operations()
     else:
