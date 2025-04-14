@@ -1,0 +1,19 @@
+name: Disk Manager Automation
+
+on:
+  workflow_dispatch:  # Allows manual triggering of the workflow with inputs
+
+jobs:
+  run-script:
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+
+      - name: Run Disk Manager Script
+        run: python advanced_disk_manager.py --action format --disk D: --fs NTFS --label NewVolume
