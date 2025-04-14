@@ -1,16 +1,28 @@
 import subprocess
 import argparse
 
-def list_unpartitioned_disks():
-    """Lists unpartitioned disks."""
+def list_disks():
+    """Lists all disks (both partitioned and unpartitioned)."""
     disks = []
-    # Check for unpartitioned disks (we can use diskpart commands to list all physical disks)
+    # Check for physical disks (disk drives) using WMIC
     result = subprocess.check_output("wmic diskdrive get caption", shell=True).decode()
     # Extract disk names from the output
     for line in result.splitlines():
         if line.strip() and line.strip().lower() != "caption":
             disks.append(line.strip())
     return disks
+
+def list_partitions(disk):
+    """Lists partitions for a given disk."""
+    partitions = []
+    try:
+        result = subprocess.check_output(f"wmic logicaldisk where \"DeviceID='{disk}'\" get caption", shell=True).decode()
+        for line in result.splitlines():
+            if line.strip() and line.strip().lower() != "caption":
+                partitions.append(line.strip())
+    except subprocess.CalledProcessError:
+        pass
+    return partitions
 
 def disk_health_check(disk):
     """Checks the disk for bad sectors."""
@@ -43,13 +55,14 @@ def format_disk(disk, file_system="NTFS", label="NewVolume"):
 
 def handle_disk_operations(action, disk, file_system="NTFS", label="NewVolume"):
     """Handles disk operations based on user action."""
-    unpartitioned_disks = list_unpartitioned_disks()
-    if not unpartitioned_disks:
-        print("No unpartitioned disks found.")
+    disks = list_disks()
+    if disk not in disks:
+        print(f"Disk {disk} is not available.")
         return
 
-    if disk not in unpartitioned_disks:
-        print(f"Disk {disk} is not unpartitioned.")
+    partitions = list_partitions(disk)
+    if partitions:
+        print(f"Disk {disk} already has partitions: {', '.join(partitions)}")
         return
 
     if action == "healthcheck":
