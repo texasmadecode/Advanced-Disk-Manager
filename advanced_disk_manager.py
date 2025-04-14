@@ -4,10 +4,12 @@ import argparse
 def list_unpartitioned_disks():
     """Lists unpartitioned disks."""
     disks = []
-    # Checking the partitions and if the file system is empty (unpartitioned)
-    for part in subprocess.check_output("wmic logicaldisk get caption, description", shell=True).decode().splitlines():
-        if part.strip().startswith('Disk'):
-            disks.append(part.split()[0])  # Extract disk names
+    # Check for unpartitioned disks (we can use diskpart commands to list all physical disks)
+    result = subprocess.check_output("wmic diskdrive get caption", shell=True).decode()
+    # Extract disk names from the output
+    for line in result.splitlines():
+        if line.strip() and line.strip().lower() != "caption":
+            disks.append(line.strip())
     return disks
 
 def disk_health_check(disk):
@@ -70,8 +72,4 @@ if __name__ == "__main__":
 
     handle_disk_operations(args.action, args.disk, args.fs, args.label)
 
-    if messagebox.askyesno("Disk Manager", "Scan for unpartitioned disks?"):
-        handle_disk_operations()
-    else:
-        messagebox.showinfo("Exit", "No action taken.")
 #i was here hehe
